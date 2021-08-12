@@ -1,0 +1,62 @@
+---
+- name: Inplantar frontend
+  hosts: aws
+  become: true
+  tasks:
+  - name: Atualizando base APT
+    apt:
+      update_cache: yes
+      state: present
+
+  - name: Instalando dependencias do docker
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+  
+  - name: Adicionando chave GPG do Docker para o APT
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+  
+  - name: Adicioando repositorio APT do docker
+    apt_repository:
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu focal stable"
+      state: present
+  
+  - name: Atualizando e Instalando Docker e Docker-Compose
+    apt:
+      update_cache: yes
+      name: "{{ item }}"
+      state: present
+    loop:
+    - "docker-ce"
+    - "docker-ce-cli"
+    - "docker-compose"
+    - "containerd.io"
+  
+  - name: Instalando GIT
+    apt:
+      name: "git"
+      state: present
+  
+  - name: Clonando Repositório
+    git:
+      repo: https://github.com/cflb-working/inodoo.git
+      dest: /opt/inodoo130/
+      single_branch: yes
+      version: main
+  
+  - name: Docker Compose UP
+    docker_compose:
+      project_src: /opt/inodoo130/
+      build: yes
+    register: output
+  
+  - ansible.builtin.debug:
+      var: output
